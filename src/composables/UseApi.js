@@ -37,6 +37,17 @@ export default function useApi(url) {
     }
   };
 
+  const put = async (id, form) => {
+    try {
+      console.log(id, form);
+      const { data } = await api.put(`${url}/${id}`, form, config);
+      return data;
+    } catch (err) {
+      console.error(err);
+      throw new Error(err);
+    }
+  };
+
   const remove = async (id) => {
     try {
       const { data } = await api.delete(`${url}/${id}`, config);
@@ -51,6 +62,7 @@ export default function useApi(url) {
     list,
     post,
     update,
+    put,
     remove,
   };
 }

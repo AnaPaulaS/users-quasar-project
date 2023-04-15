@@ -103,7 +103,7 @@ export default defineComponent({
         });
       } catch (err) {
         $q.notify({
-          message: "Erro ao inserir usuário!",
+          message: "Erro: ao inserir usuário!",
           icon: "times",
           color: "negative",
         });

@@ -25,20 +25,27 @@
         </q-input> -->
       </template>
 
-      <template v-slot:body-cell-female="props">
+      <template v-slot:body-cell-gender="props">
         <q-td :props="props">
-          {{ props.row.female }}
+          {{ props.row.gender === "male" ? "Masculino" : "Feminino" }}
         </q-td>
       </template>
 
       <template v-slot:body-cell-status="props">
         <q-td :props="props">
-          {{ props.row.status }}
+          {{ props.row.status === "active" ? "Ativo" : "Inativo" }}
         </q-td>
       </template>
 
       <template v-slot:body-cell-action="props">
         <q-td :props="props">
+          <q-btn
+            :icon="`${props.row.status === 'active' ? 'lock' : 'lock_open'}`"
+            color="primary"
+            dense
+            size="sm"
+            @click="handlePutUser(props.row)"
+          />
           <q-btn
             icon="delete"
             color="negative"
@@ -61,7 +68,7 @@ export default defineComponent({
   name: "UserTable",
 
   setup() {
-    const { list, remove } = usersService();
+    const { list, remove, put } = usersService();
     const users = ref([]);
     const pagination = ref([]);
     const columns = [
@@ -135,6 +142,8 @@ export default defineComponent({
             icon: "check",
             color: "positive",
           });
+
+          getUsers();
         });
       } catch (err) {
         $q.notify({
@@ -145,10 +154,42 @@ export default defineComponent({
       }
     };
 
+    const handlePutUser = async (user) => {
+      try {
+        $q.dialog({
+          title: "Status do usuário",
+          message: `Deseja ${
+            user.status === "active" ? "desativar" : "ativar"
+          } o usuário?`,
+          cancel: true,
+          persistent: true,
+        }).onOk(async () => {
+          await put(user.id, {
+            status: user.status === "active" ? "inactive" : "active",
+          });
+
+          $q.notify({
+            message: "Usuário editado com sucesso!",
+            icon: "check",
+            color: "positive",
+          });
+
+          getUsers();
+        });
+      } catch (err) {
+        $q.notify({
+          message: "Erro ao desativar!",
+          icon: "times",
+          color: "negative",
+        });
+      }
+    };
+
     return {
       columns,
       users,
       handleDeleteUser,
+      handlePutUser,
     };
   },
 });
