@@ -38,14 +38,23 @@
       </template>
 
       <template v-slot:body-cell-action="props">
-        <q-td :props="props">
+        <q-td :props="props" class="q-gutter-sm">
+          <q-btn
+            icon="edit"
+            color="primary"
+            dense
+            size="sm"
+            @click="handleEditUser(props.row.id)"
+          />
+
           <q-btn
             :icon="`${props.row.status === 'active' ? 'lock' : 'lock_open'}`"
-            color="primary"
+            color="accent"
             dense
             size="sm"
             @click="handlePutUser(props.row)"
           />
+
           <q-btn
             icon="delete"
             color="negative"
@@ -60,9 +69,10 @@
 </template>
 
 <script>
-import { defineComponent, ref, reactive, onMounted } from "vue";
+import { defineComponent, ref, onMounted } from "vue";
 import usersService from "src/services/users";
 import { useQuasar } from "quasar";
+import { useRouter } from "vue-router";
 
 export default defineComponent({
   name: "UserTable",
@@ -114,6 +124,7 @@ export default defineComponent({
     });
 
     const $q = useQuasar();
+    const router = useRouter();
 
     const getUsers = async () => {
       try {
@@ -123,7 +134,7 @@ export default defineComponent({
         // pagination.value = data.meta.pagination;
         // console.log(pagination);
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
     };
 
@@ -185,11 +196,16 @@ export default defineComponent({
       }
     };
 
+    const handleEditUser = async (id) => {
+      router.push({ name: "formUser", params: { id } });
+    };
+
     return {
       columns,
       users,
       handleDeleteUser,
       handlePutUser,
+      handleEditUser,
     };
   },
 });

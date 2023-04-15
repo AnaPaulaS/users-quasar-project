@@ -9,7 +9,7 @@ const routes = [
         component: () => import("pages/IndexPage.vue"),
       },
       {
-        path: "form-user",
+        path: "form-user/:id?",
         name: "formUser",
         component: () => import("pages/FormUser.vue"),
       },

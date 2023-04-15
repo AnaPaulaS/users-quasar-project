@@ -37,7 +37,7 @@
           label="Status"
           :rules="[(val) => val || 'Selecione uma opção']"
         />
-        <span v-if="bla">{{ form }}</span>
+
         <div>
           <q-btn label="Enviar" type="submit" color="primary" />
           <q-btn
@@ -55,18 +55,19 @@
 </template>
 
 <script>
-import { defineComponent, ref } from "vue";
+import { defineComponent, ref, onMounted } from "vue";
 import { useQuasar } from "quasar";
 import usersService from "src/services/users";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 
 export default defineComponent({
   name: "FormUser",
 
   setup() {
     const $q = useQuasar();
-    const { post } = usersService();
+    const { post, getById, update } = usersService();
     const router = useRouter();
+    const route = useRoute();
 
     const optionsGender = [
       { value: "female", label: "Feminino" },
@@ -83,27 +84,67 @@ export default defineComponent({
       gender: "",
       status: "",
     });
-    const bla = ref(false);
+
+    onMounted(() => {
+      if (route.params.id) getUserById();
+    });
+
+    const getUserById = async () => {
+      try {
+        const { data } = await getById(route.params.id);
+
+        form.value = {
+          id: data.data.id,
+          name: data.data.name,
+          email: data.data.email,
+          gender: {
+            value: data.data.gender,
+            label:
+              optionsGender[
+                optionsGender.findIndex((op) => op.value === data.data.gender)
+              ].label,
+          },
+          status: {
+            value: data.data.status,
+            label:
+              optionsStatus[
+                optionsStatus.findIndex((op) => op.value === data.data.status)
+              ].label,
+          },
+        };
+      } catch (err) {
+        console.error(err);
+      }
+    };
 
     const onSubmit = async () => {
       try {
-        await post({
-          name: form.value.name,
-          email: form.value.email,
-          gender: form.value.gender.value,
-          status: form.value.status.value,
-        });
-
+        if (form.value.id) {
+          await update({
+            id: form.value.id,
+            name: form.value.name,
+            email: form.value.email,
+            gender: form.value.gender.value,
+            status: form.value.status.value,
+          });
+        } else {
+          await post({
+            name: form.value.name,
+            email: form.value.email,
+            gender: form.value.gender.value,
+            status: form.value.status.value,
+          });
+        }
         router.push({ name: "home" });
 
         $q.notify({
-          message: "Usuário inserido com sucesso!",
+          message: "Dados salvos com sucesso!",
           icon: "check",
           color: "positive",
         });
       } catch (err) {
         $q.notify({
-          message: "Erro: ao inserir usuário!",
+          message: "Erro: ao processar usuário!",
           icon: "times",
           color: "negative",
         });
@@ -116,7 +157,6 @@ export default defineComponent({
     };
 
     return {
-      bla,
       onSubmit,
       myInputRules,
       form,

@@ -17,6 +17,16 @@ export default function useApi(url) {
     }
   };
 
+  const getById = async (id) => {
+    try {
+      const data = await api.get(`${url}/${id}`, config);
+      return data;
+    } catch (err) {
+      console.error(err);
+      throw new Error(err);
+    }
+  };
+
   const post = async (form) => {
     try {
       const { data } = await api.post(url, form, config);
@@ -39,7 +49,6 @@ export default function useApi(url) {
 
   const put = async (id, form) => {
     try {
-      console.log(id, form);
       const { data } = await api.put(`${url}/${id}`, form, config);
       return data;
     } catch (err) {
@@ -60,6 +69,7 @@ export default function useApi(url) {
 
   return {
     list,
+    getById,
     post,
     update,
     put,
