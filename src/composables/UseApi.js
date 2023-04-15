@@ -1,9 +1,15 @@
 import { api } from "boot/axios";
 
 export default function useApi(url) {
+  const config = {
+    headers: {
+      Authorization: `Bearer 4ece45dad01dade2e5b071e68faa83dc8111c78aa75c2a9b51292a5976bcae91`,
+    },
+  };
+
   const list = async () => {
     try {
-      const data = await api.get(url);
+      const data = await api.get(url, config);
       return data;
     } catch (err) {
       console.error(err);
@@ -13,7 +19,7 @@ export default function useApi(url) {
 
   const post = async (form) => {
     try {
-      const { data } = await api.post(url, form);
+      const { data } = await api.post(url, form, config);
       return data;
     } catch (err) {
       console.error(err);
@@ -23,7 +29,7 @@ export default function useApi(url) {
 
   const update = async (form) => {
     try {
-      const { data } = await api.patch(`${url}/${form.id}`, form);
+      const { data } = await api.patch(`${url}/${form.id}`, form, config);
       return data;
     } catch (err) {
       console.error(err);
@@ -33,7 +39,7 @@ export default function useApi(url) {
 
   const remove = async (id) => {
     try {
-      const { data } = await api.delete(`${url}/${id}`);
+      const { data } = await api.delete(`${url}/${id}`, config);
       return data;
     } catch (err) {
       console.error(err);

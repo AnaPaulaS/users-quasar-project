@@ -1,6 +1,30 @@
 <template>
   <div class="q-pa-md">
     <q-table title="Usuários" :rows="users" :columns="columns" row-key="name">
+      <template v-slot:top>
+        <span class="text-h5"> Usuários </span>
+        <q-space />
+
+        <q-btn
+          color="primary"
+          label="Adicionar usuário"
+          :to="{ name: 'formUser' }"
+        />
+
+        <!-- <q-space />
+        <q-input
+          borderless
+          dense
+          debounce="300"
+          color="primary"
+          v-model="filter"
+        >
+          <template v-slot:append>
+            <q-icon name="search" />
+          </template>
+        </q-input> -->
+      </template>
+
       <template v-slot:body-cell-female="props">
         <q-td :props="props">
           {{ props.row.female }}
