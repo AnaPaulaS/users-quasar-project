@@ -9,52 +9,7 @@
       hide-pagination
     >
       <template v-slot:top>
-        <span class="text-h5"> Usuários </span>
-
-        <q-space />
-
-        <q-select
-          square
-          v-model="query"
-          dense
-          options-dense
-          emit-value
-          map-options
-          :options="columns"
-          option-value="name"
-          options-cover
-          style="min-width: 150px"
-          label="Buscar por"
-        />
-
-        <q-input dense debounce="300" color="primary" v-model="filter">
-          <template v-slot:append>
-            <q-btn
-              v-if="showSearch"
-              icon="search"
-              color="primary"
-              dense
-              size="sm"
-              @click="searchUser()"
-            />
-            <q-btn
-              v-else
-              icon="close"
-              color="primary"
-              dense
-              size="sm"
-              @click="clearSearchUser()"
-            />
-          </template>
-        </q-input>
-
-        <q-space />
-
-        <q-btn
-          color="primary"
-          label="Adicionar usuário"
-          :to="{ name: 'formUser' }"
-        />
+        <UserTableTop :columns="columns" @some-event="searchCallback" />
       </template>
 
       <template v-slot:body-cell-gender="props">
@@ -70,30 +25,8 @@
       </template>
 
       <template v-slot:body-cell-action="props">
-        <q-td :props="props" class="q-gutter-sm">
-          <q-btn
-            icon="edit"
-            color="primary"
-            dense
-            size="sm"
-            @click="handleEditUser(props.row.id)"
-          />
-
-          <q-btn
-            :icon="`${props.row.status === 'active' ? 'lock' : 'lock_open'}`"
-            color="accent"
-            dense
-            size="sm"
-            @click="handlePutUser(props.row)"
-          />
-
-          <q-btn
-            icon="delete"
-            color="negative"
-            dense
-            size="sm"
-            @click="handleDeleteUser(props.row)"
-          />
+        <q-td :props="props">
+          <UserTableActions :row="props.row" @some-event="callback" />
         </q-td>
       </template>
     </q-table>
@@ -113,14 +46,15 @@
 <script>
 import { defineComponent, ref, onMounted } from "vue";
 import usersService from "src/services/users";
-import { useQuasar } from "quasar";
-import { useRouter } from "vue-router";
+import UserTableActions from "src/components/UserTableActions.vue";
+import UserTableTop from "src/components/UserTableTop.vue";
 
 export default defineComponent({
   name: "UserTable",
+  components: { UserTableActions, UserTableTop },
 
   setup() {
-    const { list, remove, put } = usersService();
+    const { list } = usersService();
     const users = ref([]);
     const filter = ref("");
     const columns = [
@@ -169,19 +103,13 @@ export default defineComponent({
       rowsPerPage: 5,
     });
 
-    const query = ref("");
-    const showSearch = ref(true);
-
     onMounted(() => {
       getUsers(pagination.value.page);
     });
 
-    const $q = useQuasar();
-    const router = useRouter();
-
     const getUsers = async (page) => {
       try {
-        const { data } = await list({ page: page, gender: "male" });
+        const { data } = await list({ page: page });
         users.value = data.data;
 
         pagination.value.pages = data.meta.pagination.pages;
@@ -191,66 +119,16 @@ export default defineComponent({
       }
     };
 
-    const handleDeleteUser = async (user) => {
-      try {
-        $q.dialog({
-          title: "Remover usuário",
-          message: `Deseja remover o usuário ${user.name} ?`,
-          cancel: true,
-          persistent: true,
-        }).onOk(async () => {
-          await remove(user.id);
-
-          $q.notify({
-            message: "Usuário deletado com sucesso!",
-            icon: "check",
-            color: "positive",
-          });
-
-          getUsers(pagination.value.page);
-        });
-      } catch (err) {
-        $q.notify({
-          message: "Erro ao deletar!",
-          icon: "times",
-          color: "negative",
-        });
-      }
+    const callback = () => {
+      getUsers(pagination.value.page);
     };
 
-    const handlePutUser = async (user) => {
-      try {
-        $q.dialog({
-          title: "Status do usuário",
-          message: `Deseja ${
-            user.status === "active" ? "desativar" : "ativar"
-          } o usuário?`,
-          cancel: true,
-          persistent: true,
-        }).onOk(async () => {
-          await put(user.id, {
-            status: user.status === "active" ? "inactive" : "active",
-          });
+    const searchCallback = (user, pages) => {
+      users.value = user;
 
-          $q.notify({
-            message: "Usuário editado com sucesso!",
-            icon: "check",
-            color: "positive",
-          });
-
-          getUsers(pagination.value.page);
-        });
-      } catch (err) {
-        $q.notify({
-          message: "Erro ao desativar!",
-          icon: "times",
-          color: "negative",
-        });
-      }
-    };
-
-    const handleEditUser = async (id) => {
-      router.push({ name: "formUser", params: { id } });
+      pagination.value.page = pages.page;
+      pagination.value.pages = pages.pages;
+      pagination.value.rowsPerPage = pages.rowsPerPage;
     };
 
     const moreUsersPage = async () => {
@@ -258,40 +136,14 @@ export default defineComponent({
       users.value.push(...data.data);
     };
 
-    const searchUser = async () => {
-      const form = {};
-      form.page = 1;
-      form[query.value] = filter.value;
-      const { data } = await list(form);
-      users.value = data.data;
-
-      pagination.value.pages = data.meta.pagination.pages;
-      pagination.value.rowsPerPage = data.meta.pagination.limit;
-
-      showSearch.value = false;
-    };
-
-    const clearSearchUser = async () => {
-      pagination.value.page = 1;
-      getUsers(pagination.value.page);
-      showSearch.value = true;
-      filter.value = "";
-      query.value = "";
-    };
-
     return {
       filter,
       columns,
       users,
-      query,
       pagination,
-      showSearch,
-      handleDeleteUser,
-      handlePutUser,
-      handleEditUser,
+      callback,
+      searchCallback,
       moreUsersPage,
-      searchUser,
-      clearSearchUser,
     };
   },
 });
