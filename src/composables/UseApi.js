@@ -7,11 +7,9 @@ export default function useApi(url) {
     },
   };
 
-  const list = async (page) => {
+  const list = async (query) => {
     try {
-      // const uri = url
-      // if()
-      const data = await api.get(`${url}?page=${page}`, config);
+      const data = await api.get(`${url}${query}`, config);
       return data;
     } catch (err) {
       console.error(err);

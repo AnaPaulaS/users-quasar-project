@@ -5,7 +5,6 @@
       :rows="users"
       :columns="columns"
       row-key="name"
-      :filter="filter"
       v-model:pagination="pagination"
       hide-pagination
     >
@@ -14,9 +13,38 @@
 
         <q-space />
 
+        <q-select
+          square
+          v-model="query"
+          dense
+          options-dense
+          emit-value
+          map-options
+          :options="columns"
+          option-value="name"
+          options-cover
+          style="min-width: 150px"
+          label="Buscar por"
+        />
+
         <q-input dense debounce="300" color="primary" v-model="filter">
           <template v-slot:append>
-            <q-icon name="search" />
+            <q-btn
+              v-if="showSearch"
+              icon="search"
+              color="primary"
+              dense
+              size="sm"
+              @click="searchUser()"
+            />
+            <q-btn
+              v-else
+              icon="close"
+              color="primary"
+              dense
+              size="sm"
+              @click="clearSearchUser()"
+            />
           </template>
         </q-input>
 
@@ -141,6 +169,9 @@ export default defineComponent({
       rowsPerPage: 5,
     });
 
+    const query = ref("");
+    const showSearch = ref(true);
+
     onMounted(() => {
       getUsers(pagination.value.page);
     });
@@ -150,7 +181,7 @@ export default defineComponent({
 
     const getUsers = async (page) => {
       try {
-        const { data } = await list(page);
+        const { data } = await list({ page: page, gender: "male" });
         users.value = data.data;
 
         pagination.value.pages = data.meta.pagination.pages;
@@ -223,19 +254,44 @@ export default defineComponent({
     };
 
     const moreUsersPage = async () => {
-      const { data } = await list(pagination.value.page);
+      const { data } = await list({ page: pagination.value.page });
       users.value.push(...data.data);
+    };
+
+    const searchUser = async () => {
+      const form = {};
+      form.page = 1;
+      form[query.value] = filter.value;
+      const { data } = await list(form);
+      users.value = data.data;
+
+      pagination.value.pages = data.meta.pagination.pages;
+      pagination.value.rowsPerPage = data.meta.pagination.limit;
+
+      showSearch.value = false;
+    };
+
+    const clearSearchUser = async () => {
+      pagination.value.page = 1;
+      getUsers(pagination.value.page);
+      showSearch.value = true;
+      filter.value = "";
+      query.value = "";
     };
 
     return {
       filter,
       columns,
       users,
+      query,
       pagination,
+      showSearch,
       handleDeleteUser,
       handlePutUser,
       handleEditUser,
       moreUsersPage,
+      searchUser,
+      clearSearchUser,
     };
   },
 });
