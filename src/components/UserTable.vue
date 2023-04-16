@@ -1,8 +1,25 @@
 <template>
   <div class="q-pa-md">
-    <q-table title="Usuários" :rows="users" :columns="columns" row-key="name">
+    <q-table
+      title="Usuários"
+      :rows="users"
+      :columns="columns"
+      row-key="name"
+      :filter="filter"
+      v-model:pagination="pagination"
+      hide-pagination
+    >
       <template v-slot:top>
         <span class="text-h5"> Usuários </span>
+
+        <q-space />
+
+        <q-input dense debounce="300" color="primary" v-model="filter">
+          <template v-slot:append>
+            <q-icon name="search" />
+          </template>
+        </q-input>
+
         <q-space />
 
         <q-btn
@@ -10,19 +27,6 @@
           label="Adicionar usuário"
           :to="{ name: 'formUser' }"
         />
-
-        <!-- <q-space />
-        <q-input
-          borderless
-          dense
-          debounce="300"
-          color="primary"
-          v-model="filter"
-        >
-          <template v-slot:append>
-            <q-icon name="search" />
-          </template>
-        </q-input> -->
       </template>
 
       <template v-slot:body-cell-gender="props">
@@ -65,6 +69,16 @@
         </q-td>
       </template>
     </q-table>
+
+    <div class="q-pa-lg flex flex-center">
+      <q-pagination
+        v-model="pagination.page"
+        :max="pagination.pages"
+        :max-pages="4"
+        direction-links
+        @update:model-value="moreUsersPage"
+      />
+    </div>
   </div>
 </template>
 
@@ -80,7 +94,7 @@ export default defineComponent({
   setup() {
     const { list, remove, put } = usersService();
     const users = ref([]);
-    const pagination = ref([]);
+    const filter = ref("");
     const columns = [
       {
         name: "name",
@@ -119,20 +133,28 @@ export default defineComponent({
       },
     ];
 
+    const pagination = ref({
+      sortBy: "desc",
+      descending: false,
+      page: 1,
+      pages: 2,
+      rowsPerPage: 5,
+    });
+
     onMounted(() => {
-      getUsers();
+      getUsers(pagination.value.page);
     });
 
     const $q = useQuasar();
     const router = useRouter();
 
-    const getUsers = async () => {
+    const getUsers = async (page) => {
       try {
-        const { data } = await list();
-        // console.log(data);
+        const { data } = await list(page);
         users.value = data.data;
-        // pagination.value = data.meta.pagination;
-        // console.log(pagination);
+
+        pagination.value.pages = data.meta.pagination.pages;
+        pagination.value.rowsPerPage = data.meta.pagination.limit;
       } catch (err) {
         console.error(err);
       }
@@ -154,7 +176,7 @@ export default defineComponent({
             color: "positive",
           });
 
-          getUsers();
+          getUsers(pagination.value.page);
         });
       } catch (err) {
         $q.notify({
@@ -185,7 +207,7 @@ export default defineComponent({
             color: "positive",
           });
 
-          getUsers();
+          getUsers(pagination.value.page);
         });
       } catch (err) {
         $q.notify({
@@ -200,12 +222,20 @@ export default defineComponent({
       router.push({ name: "formUser", params: { id } });
     };
 
+    const moreUsersPage = async () => {
+      const { data } = await list(pagination.value.page);
+      users.value.push(...data.data);
+    };
+
     return {
+      filter,
       columns,
       users,
+      pagination,
       handleDeleteUser,
       handlePutUser,
       handleEditUser,
+      moreUsersPage,
     };
   },
 });
